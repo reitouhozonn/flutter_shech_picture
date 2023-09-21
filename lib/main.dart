@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-void main() {
+Future<void> main() async {
+  await dotenv.load(fileName: '.env');
   runApp(const MainApp());
 }
 
@@ -50,11 +52,12 @@ class _PixabayPageState extends State<PixabayPage> {
   List<PixabayImage> pixabayImages = [];
 
   Future<void> fetchImages(String text) async {
+    final key = dotenv.env['PIXABAY_KEY'] ?? '';
     final response = await Dio().get(
       // 'https://pixabay.com/api/?key=39403222-fea081f96daf081db91214c01&q= $text&image_type=photo',
       'https://pixabay.com/api/',
       queryParameters: {
-        'key': '39403222-fea081f96daf081db91214c01',
+        'key': key,
         'q': text,
         'image_type': 'photo',
         'per_page': '40',
@@ -75,10 +78,12 @@ class _PixabayPageState extends State<PixabayPage> {
       ),
     );
 
-    final imageFile = XFile('${dir.path} + ${response.data}');
-    print(imageFile);
+    // final imageFile = XFile('${dir.path} + ${response.data}');
+    final imageFile =
+        await File('${dir.path}/image.png').writeAsBytes(response.data);
 
-    await Share.shareXFiles([imageFile]);
+    await Share.shareFiles([imageFile.path]);
+    // await Share.shareXFiles([imageFile]);
   }
 
   @override
@@ -97,7 +102,6 @@ class _PixabayPageState extends State<PixabayPage> {
             filled: true,
           ),
           onFieldSubmitted: (text) {
-            print(text);
             fetchImages(text);
           },
         ),
